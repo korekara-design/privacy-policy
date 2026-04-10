@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JourneyCanvas — 旅行計画アプリ</title>
+<meta name="description" content="予定を立てた瞬間から、もう旅は始まってる。Google MapsのURLを貼るだけで旅程を管理。登録不要・オフライン対応・無料。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  :root{
+    /* JourneyCanvas overrides */
+    --accent:#6AADE0;
+    --accent-hover:#5899CC;
+    --highlight:#FBDB4A;
+    /* Notion-derived tokens */
+    --bg:linear-gradient(135deg, #6AADE0 0%, #4A90C4 50%, #3A7AB0 100%);
+    --bg-light:#FFFFFF;
+    --surface:#4A90C4;
+    --text:rgba(255,255,255,0.95);
+    --text-secondary:rgba(255,255,255,0.6);
+    --text-dark:rgba(0,0,0,0.95);
+    --text-dark-secondary:rgba(0,0,0,0.55);
+    --border:rgba(255,255,255,0.2);
+    --border-light:rgba(0,0,0,0.08);
+    --radius-sm:6px;
+    --radius-md:8px;
+    --radius-lg:12px;
+  }
+
+  body{
+    font-family: Inter, 'Noto Sans JP', -apple-system, "system-ui", "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif;
+    font-feature-settings: "lnum","locl" 0;
+    -webkit-font-smoothing:antialiased;
+    color:var(--text);
+    background:#4A90C4;
+  }
+
+  /* ── Hero ── */
+  .hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:80px 32px;
+    position:relative;
+    background:linear-gradient(135deg, #6AADE0 0%, #4A90C4 50%, #3A7AB0 100%);
+  }
+  .hero-inner{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:40px;
+    max-width:900px;
+    width:100%;
+    margin:0 auto;
+  }
+  .hero-text{
+    flex:1;
+    text-align:left;
+  }
+  .hero-image{
+    flex-shrink:0;
+  }
+  .hero-image img{
+    width:clamp(200px, 25vw, 300px);
+    border-radius:24px;
+    box-shadow:0 16px 48px rgba(0,0,0,0.25);
+  }
+  .hero-app-badge{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-bottom:32px;
+  }
+  .hero-icon{
+    width:64px;height:64px;
+    border-radius:16px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.2);
+  }
+  .hero-app-name{
+    font-size:22px;
+    font-weight:700;
+    color:rgba(255,255,255,0.9);
+    letter-spacing:3px;
+  }
+  .hero-badge{
+    display:inline-block;
+    background:var(--highlight);
+    color:#191918;
+    font-size:13px;font-weight:700;
+    padding:6px 20px;
+    border-radius:100px;
+    margin-bottom:24px;
+    letter-spacing:0.04em;
+  }
+  .hero h1{
+    font-weight:700;
+    line-height:1.2;
+    margin-bottom:16px;
+    letter-spacing:-0.01em;
+    white-space:nowrap;
+    font-size:clamp(20px, 4vw, 64px);
+  }
+  .hero-line1{
+    font-size:0.72em;
+    letter-spacing:0.08em;
+  }
+  .hero h1 em{
+    font-style:normal;
+    color:var(--highlight);
+  }
+  .hero-sub{
+    font-size:22px;
+    color:rgba(255,255,255,0.95);
+    line-height:1.6;
+    margin-bottom:40px;
+    max-width:500px;
+    font-weight:500;
+  }
+  .btn-primary{
+    display:inline-block;
+    background:var(--accent);
+    color:#FFFFFF;
+    font-size:18px;font-weight:600;
+    padding:14px 48px;
+    border-radius:var(--radius-md);
+    text-decoration:none;
+    transition:background 0.15s, transform 0.15s;
+  }
+  .btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px)}
+
+  /* ── Section (Light) ── */
+  .section-light{
+    background:var(--bg-light);
+    color:var(--text-dark);
+    padding:96px 32px;
+  }
+  .section-dark{
+    padding:96px 32px;
+  }
+  .container{
+    max-width:1200px;
+    margin:0 auto;
+  }
+  .section-heading{
+    font-size:44px;font-weight:700;
+    line-height:1.1;
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .section-heading-light{color:var(--text-dark)}
+  .section-heading-dark{color:var(--text)}
+  .section-logo-heading{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+    margin-bottom:40px;
+  }
+  .section-logo{height:60px}
+  .section-logo-heading .section-heading{margin-bottom:0}
+  .section-desc{
+    text-align:center;
+    font-size:18px;
+    line-height:1.5;
+    margin-bottom:64px;
+  }
+  .section-desc-light{color:var(--text-dark-secondary)}
+  .section-desc-dark{color:var(--text-secondary)}
+
+  /* ── Features (3 cols) ── */
+  .features{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:24px;
+  }
+  .feature-card{
+    background:var(--bg-light);
+    border:1px solid var(--border-light);
+    border-radius:var(--radius-lg);
+    padding:32px 24px;
+  }
+  .feature-top{
+    display:flex;align-items:center;gap:12px;
+    margin-bottom:12px;
+  }
+  .feature-icon{
+    width:48px;height:48px;
+    background:transparent;
+    border-radius:var(--radius-md);
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;
+    flex-shrink:0;
+  }
+  .feature-icon img{
+    filter:invert(62%) sepia(52%) saturate(456%) hue-rotate(170deg) brightness(92%) contrast(87%);
+  }
+  .feature-card h3{
+    font-size:22px;font-weight:700;
+    color:var(--text-dark);
+    margin-bottom:8px;
+  }
+  .feature-card p{
+    font-size:16px;
+    color:var(--text-dark-secondary);
+    line-height:1.7;
+  }
+
+  /* ── Screenshots ── */
+  .screenshot-wrap{
+    display:flex;
+    gap:20px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    padding:0 32px 16px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .screenshot-wrap::-webkit-scrollbar{display:none}
+  .screenshot-wrap img{
+    flex-shrink:0;
+    width:260px;
+    border-radius:16px;
+    border:1px solid var(--border);
+    scroll-snap-align:center;
+  }
+
+  /* ── How to use ── */
+  .howto{
+    display:flex;flex-direction:column;
+    gap:24px;
+    max-width:600px;
+    margin:0 auto;
+  }
+  .howto-step{
+    display:flex;gap:20px;align-items:flex-start;
+  }
+  .howto-num{
+    flex-shrink:0;
+    width:40px;height:40px;
+    background:var(--accent);
+    color:#fff;
+    font-size:18px;font-weight:700;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .howto-step .text h4{
+    font-size:18px;font-weight:600;
+    color:var(--text-dark);
+    margin-bottom:4px;
+  }
+  .howto-step .text p{
+    font-size:16px;
+    color:var(--text-dark-secondary);
+    line-height:1.6;
+  }
+
+  /* ── Recommend ── */
+  .recommend-list{
+    max-width:600px;
+    margin:0 auto;
+    display:flex;flex-direction:column;
+    gap:12px;
+  }
+  .recommend-item{
+    display:flex;align-items:center;gap:16px;
+    background:var(--surface);
+    padding:20px 24px;
+    border-radius:var(--radius-lg);
+    border:1px solid var(--border);
+    font-size:17px;
+    color:var(--text);
+  }
+  .recommend-check{
+    flex-shrink:0;
+    width:28px;height:28px;
+    background:var(--accent);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:16px;font-weight:700;
+  }
+
+  /* ── CTA ── */
+  .cta{
+    text-align:center;
+    padding:96px 32px;
+    background:var(--surface);
+    border-top:1px solid rgba(255,255,255,0.15);
+    border-bottom:1px solid rgba(255,255,255,0.15);
+  }
+  .cta h2{
+    font-size:40px;font-weight:700;
+    color:var(--text);
+    margin-bottom:8px;
+  }
+  .cta p{
+    font-size:16px;
+    color:var(--text-secondary);
+    margin-bottom:32px;
+  }
+  .btn-highlight{
+    display:inline-block;
+    background:#FFFFFF;
+    color:var(--accent);
+    font-size:18px;font-weight:700;
+    padding:16px 52px;
+    border-radius:var(--radius-md);
+    text-decoration:none;
+    transition:transform 0.15s;
+  }
+  .btn-highlight:hover{transform:translateY(-1px)}
+
+  /* ── Privacy ── */
+  .privacy{
+    text-align:center;
+    padding:48px 32px;
+  }
+  .privacy-text{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:18px;
+    font-weight:500;
+    color:rgba(255,255,255,0.95);
+    background:rgba(255,255,255,0.12);
+    padding:20px 32px;
+    border-radius:var(--radius-lg);
+    border:1px solid rgba(255,255,255,0.25);
+  }
+
+  /* ── Footer ── */
+  footer{
+    text-align:center;
+    padding:32px 16px;
+    border-top:1px solid var(--border);
+  }
+  footer div{
+    display:flex;
+    justify-content:center;
+    flex-wrap:nowrap;
+    white-space:nowrap;
+  }
+  footer a{
+    color:var(--text-secondary);
+    font-size:13px;
+    text-decoration:none;
+    margin:0 6px;
+    transition:color 0.15s;
+  }
+  footer a:hover{color:var(--accent)}
+  footer .copy{
+    font-size:13px;
+    color:rgba(255,255,255,0.6);
+    margin-top:16px;
+  }
+
+  /* ── Responsive ── */
+  @media(min-width:768px){
+    .hero h1{font-size:64px;line-height:64px}
+    .features{grid-template-columns:repeat(3,1fr)}
+    .screenshot-wrap{justify-content:center}
+    .screenshot-wrap img{width:240px}
+  }
+  @media(max-width:767px){
+    .hero{min-height:auto;padding:60px 24px}
+    .hero h1{font-size:40px;line-height:1.15}
+    .section-heading{font-size:24px}
+    .section-light,.section-dark{padding:64px 24px}
+    .cta{padding:64px 24px}
+    .cta h2{font-size:24px}
+  }
+  @media(min-width:768px){
+    .hero h1{font-size:64px;line-height:64px}
+    .features{grid-template-columns:repeat(3,1fr)}
+    .screenshot-wrap{justify-content:center}
+    .screenshot-wrap img{width:240px}
+  }
+  @media(max-width:767px){
+    .hero{min-height:auto;padding:40px 16px}
+    .hero-inner{flex-direction:column;text-align:center;gap:24px}
+    .hero-text{text-align:center}
+    .hero-app-badge{justify-content:center}
+    .hero-image img{width:200px}
+    .hero h1{font-size:36px;line-height:1.15;white-space:normal}
+    .hero-sub{font-size:14px;margin-bottom:20px}
+    .hero-app-name{font-size:16px;letter-spacing:2px}
+    .section-heading{font-size:clamp(20px, 5vw, 28px)}
+    .section-logo-heading{flex-direction:column;gap:8px}
+    .section-light,.section-dark{padding:40px 16px}
+    .section-desc{margin-bottom:32px}
+    .feature-card{padding:20px 16px;display:flex;flex-direction:column}
+    .feature-card .feature-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+    .feature-card .feature-emoji{margin-bottom:0}
+    .feature-card h3{margin-bottom:0}
+    .howto-step{gap:12px}
+    .recommend-item{padding:14px 16px}
+    .cta{padding:40px 16px}
+    .cta h2{font-size:24px}
+    .privacy{padding:24px 16px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-app-badge">
+        <img src="images/app-icon.png" alt="JourneyCanvas" class="hero-icon">
+        <span class="hero-app-name">JOURNEY CANVAS</span>
+      </div>
+      <h1><span class="hero-line1">予定を立てた瞬間から、</span><br>もう<em>旅</em>は始まってる</h1>
+      <p class="hero-sub">こんな旅程アプリが欲しかった。<br>Google Mapsの共有URLを貼るだけ。</p>
+      <a href="https://apps.apple.com/jp/app/journeycanvas/id6761838956" class="btn-primary">App Storeでダウンロード</a>
+    </div>
+    <div class="hero-image">
+      <img src="images/screenshot-triplist.png" alt="JourneyCanvas">
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section-light">
+  <div class="container">
+    <div class="section-logo-heading">
+      <img src="images/JClogo.svg" alt="JourneyCanvas" class="section-logo">
+      <h2 class="section-heading section-heading-light">3つの特徴</h2>
+    </div>
+    <p class="section-desc section-desc-light">旅行好きが、旅行好きのために作りました。</p>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-top"><div class="feature-icon"><img src="images/icon-map.png" alt="" style="width:28px;height:28px"></div><h3>Google Maps URLを貼るだけ</h3></div>
+        <p>共有URLを貼ると場所の名前を自動取得。Google Mapsでいつも保存してるお気に入りスポットを、そのままスケジュールに組み込める。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-top"><div class="feature-icon"><img src="images/icon-calendar.png" alt="" style="width:28px;height:28px"></div><h3>Day別に予定を管理</h3></div>
+        <p>旅行の日程ごとに予定を整理。ドラッグで並べ替えも自由。保存リストで行きたい場所をストックして、あとから組み込める。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-top"><div class="feature-icon"><img src="images/icon-lock.png" alt="" style="width:28px;height:28px"></div><h3>登録不要・オフライン対応</h3></div>
+        <p>アカウント登録は不要。すべてのデータは端末内に保存。海外でも通信を気にせず使える。個人情報の取得は一切なし。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Screenshots -->
+<section class="section-dark">
+  <div class="container">
+    <h2 class="section-heading section-heading-dark">シンプルで直感的に予定を立てよう</h2>
+    <p class="section-desc section-desc-dark"></p>
+    <div class="screenshot-wrap">
+      <img src="images/screenshot-triplist.png" alt="旅行一覧">
+      <img src="images/screenshot-detail.png" alt="旅行詳細">
+      <img src="images/screenshot-add.png" alt="予定を追加">
+      <img src="images/screenshot-create.png" alt="新しい旅行作成">
+    </div>
+  </div>
+</section>
+
+<!-- How to use -->
+<section class="section-light">
+  <div class="container">
+    <h2 class="section-heading section-heading-light">使い方</h2>
+    <p class="section-desc section-desc-light">5ステップで旅の計画が完成します。</p>
+    <div class="howto">
+      <div class="howto-step">
+        <div class="howto-num">1</div>
+        <div class="text">
+          <h4>日程と目的地を入れて旅行を作成</h4>
+          <p>好きな写真を背景に設定できます</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">2</div>
+        <div class="text">
+          <h4>Google Mapsの共有URLを貼って予定を追加</h4>
+          <p>場所の名前が自動で入ります</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">3</div>
+        <div class="text">
+          <h4>写真やメモを各スポットに追加</h4>
+          <p>Web検索・アルバム・URLから写真を選べます</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">4</div>
+        <div class="text">
+          <h4>並べ替えボタンで予定をドラッグ移動</h4>
+          <p>日をまたいだ移動もできます</p>
+        </div>
+      </div>
+      <div class="howto-step">
+        <div class="howto-num">5</div>
+        <div class="text">
+          <h4>共有機能で旅程を画像としてシェア</h4>
+          <p>家族や友達に送れます</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Recommend -->
+<section class="section-dark">
+  <div class="container">
+    <h2 class="section-heading section-heading-dark">こんな方におすすめ</h2>
+    <p class="section-desc section-desc-dark"></p>
+    <div class="recommend-list">
+      <div class="recommend-item"><div class="recommend-check">✓</div>旅行の計画を立てるのが好きな方</div>
+      <div class="recommend-item"><div class="recommend-check">✓</div>Google Mapsで行きたい場所をたくさん保存してる方</div>
+      <div class="recommend-item"><div class="recommend-check">✓</div>何度も予定を組み直して作り込みたい方</div>
+      <div class="recommend-item"><div class="recommend-check">✓</div>シンプルな旅行計画アプリを探してる方</div>
+      <div class="recommend-item"><div class="recommend-check">✓</div>オフラインでも使えるアプリが欲しい方</div>
+      <div class="recommend-item"><div class="recommend-check">✓</div>アカウント登録なしで使いたい方</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>旅の計画を始めよう</h2>
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:20px 0">
+    <img src="images/app-icon.png" alt="JourneyCanvas" style="width:48px;height:48px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.2)">
+    <span style="font-size:20px;font-weight:700;color:rgba(255,255,255,0.9);letter-spacing:2px">JOURNEY CANVAS</span>
+  </div>
+  <a href="https://apps.apple.com/jp/app/journeycanvas/id6761838956" class="btn-highlight">App Storeでダウンロード</a>
+</section>
+
+<!-- Privacy -->
+<section class="privacy">
+  <div class="privacy-text">🔒 すべてのデータは端末内に保存。個人情報の取得は一切ありません。</div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div>
+    <a href="https://apps.apple.com/jp/app/journeycanvas/id6761838956">App Store</a>
+    <a href="https://korekara-design.github.io/privacy-policy/">プライバシーポリシー</a>
+    <a href="https://www.threads.com/@reiko_korekara">Threads</a>
+    <a href="https://note.com/reiko_korekara">note</a>
+  </div>
+  <p class="copy">&copy; 2026 korekara</p>
+</footer>
+
+</body>
+</html>
